@@ -4,7 +4,7 @@ import os
 import uuid
 from typing import List, Optional
 
-from ..db.image_storage_type import ImageStorageType
+from db.image_storage_type import ImageStorageType
 from error.errors import ConfigError
 from client.oss_client import OSSClientWrapper
 
