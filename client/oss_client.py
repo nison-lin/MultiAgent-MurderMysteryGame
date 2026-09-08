@@ -48,3 +48,12 @@ class OSSClientWrapper:
             host = scheme
             scheme = "https"
         return f"{scheme}://{self.bucketName}.{host}/{object_key}"
+
+    async def delete(self, object_key: str) -> None:
+        """
+        删除OSS上的指定文件。
+        """
+        try:
+            await asyncio.to_thread(self.bucket.delete_object, object_key)
+        except Exception as e:
+            raise OSSError(f"删除OSS文件时发生错误: {e}")
