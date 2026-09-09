@@ -32,6 +32,7 @@ class ScriptEntity(BaseEntity):
     status: Mapped[ScriptStatusEnum] = mapped_column()
     cover_image_path: Mapped[str | None] = mapped_column(Text)
     cover_image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
+    
     characters: Mapped[list["CharacterEntity"]] = relationship("CharacterEntity", back_populates="script", cascade="all, delete-orphan")
     stories: Mapped[list["StoryEntity"]] = relationship("StoryEntity", back_populates="script", cascade="all, delete-orphan")
     backstory: Mapped["BackstoryEntity"] = relationship("BackstoryEntity", back_populates="script", uselist=False, cascade="all, delete-orphan")

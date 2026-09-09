@@ -12,7 +12,7 @@ class EvidenceEntity(BaseEntity):
     __tablename__ = "evidence"
 
     name: Mapped[str] = mapped_column(String(255))
-    description: Mapped[str | None] = mapped_column(String(255))
+    content: Mapped[str] = mapped_column(String(255))
     image_path: Mapped[str | None] = mapped_column(Text)
     image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
     is_public: Mapped[bool] = mapped_column()

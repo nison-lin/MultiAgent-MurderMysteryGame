@@ -24,7 +24,7 @@ class CharacterEntity(BaseEntity):
     gender: Mapped[genderEnum] = mapped_column()
     age: Mapped[int] = mapped_column()
     profession: Mapped[str] = mapped_column(String(50))
-    background: Mapped[str | None] = mapped_column(String(255))
+    background: Mapped[str] = mapped_column(String(255))
     is_murderer: Mapped[bool] = mapped_column()
     avatar_path: Mapped[str | None] = mapped_column(Text)
     avatar_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
