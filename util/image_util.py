@@ -1,4 +1,4 @@
-"""图片存储服务"""
+"""图片存储工具"""
 
 import os
 import uuid
