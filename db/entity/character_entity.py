@@ -9,7 +9,7 @@ from ..image_storage_type import ImageStorageType
 
 from .base_entity import BaseEntity
 
-class genderEnum(str, Enum):
+class CharacterGenderEnum(str, Enum):
     """性别枚举"""
     MALE = "男"
     FEMALE = "女"
@@ -21,7 +21,7 @@ class CharacterEntity(BaseEntity):
     __tablename__ = "character"
 
     name: Mapped[str] = mapped_column(String(50))
-    gender: Mapped[genderEnum] = mapped_column()
+    gender: Mapped[CharacterGenderEnum] = mapped_column()
     age: Mapped[int] = mapped_column()
     profession: Mapped[str] = mapped_column(String(50))
     background: Mapped[str] = mapped_column(String(255))

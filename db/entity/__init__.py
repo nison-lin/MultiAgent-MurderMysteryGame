@@ -2,7 +2,7 @@
 
 from .base_entity import BaseEntity
 from .backstory_entity import BackstoryEntity
-from .character_entity import CharacterEntity, genderEnum
+from .character_entity import CharacterEntity, CharacterGenderEnum
 from .evidence_entity import EvidenceEntity
 from .script_entity import ScriptEntity, ScriptTypeEnum, ScriptStatusEnum
 from .story_entity import StoryEntity
@@ -11,7 +11,7 @@ __all__ = [
     "BaseEntity",
     "BackstoryEntity",
     "CharacterEntity",
-    "genderEnum",
+    "CharacterGenderEnum",
     "EvidenceEntity",
     "ScriptEntity",
     "ScriptTypeEnum",
