@@ -31,3 +31,4 @@ class CharacterEntity(BaseEntity):
     script_id: Mapped[int] = mapped_column(ForeignKey("script.id"))
     
     script: Mapped["ScriptEntity"] = relationship("ScriptEntity", back_populates="characters")
+    stories: Mapped[list["StoryEntity"]] = relationship("StoryEntity", back_populates="character", cascade="all, delete-orphan")

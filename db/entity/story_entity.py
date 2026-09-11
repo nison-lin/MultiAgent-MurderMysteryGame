@@ -11,7 +11,7 @@ class StoryEntity(BaseEntity):
 
     content: Mapped[str] = mapped_column(Text)
     chapter: Mapped[int] = mapped_column()
-    script_id: Mapped[int] = mapped_column(ForeignKey("script.id"))
+    character_id: Mapped[int] = mapped_column(ForeignKey("character.id"))
 
-    script: Mapped["ScriptEntity"] = relationship("ScriptEntity", back_populates="stories")
+    character: Mapped["CharacterEntity"] = relationship("CharacterEntity", back_populates="stories")
     evidences: Mapped[list["EvidenceEntity"]] = relationship("EvidenceEntity", back_populates="story", cascade="all, delete-orphan")
