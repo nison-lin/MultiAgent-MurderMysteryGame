@@ -14,4 +14,3 @@ class StoryEntity(BaseEntity):
     character_id: Mapped[int | None] = mapped_column(ForeignKey("character.id"))
 
     character: Mapped["CharacterEntity"] = relationship("CharacterEntity", back_populates="stories")
-    evidences: Mapped[list["EvidenceEntity"]] = relationship("EvidenceEntity", back_populates="story", cascade="all, delete-orphan")

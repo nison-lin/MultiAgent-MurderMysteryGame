@@ -13,9 +13,10 @@ class EvidenceEntity(BaseEntity):
 
     name: Mapped[str | None] = mapped_column(String(255))
     content: Mapped[str | None] = mapped_column(String(255))
+    chapter: Mapped[int | None] = mapped_column()
     image_path: Mapped[str | None] = mapped_column(Text)
     image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
     is_public: Mapped[bool | None] = mapped_column()
-    story_id: Mapped[int | None] = mapped_column(ForeignKey("story.id"))
+    script_id: Mapped[int] = mapped_column(ForeignKey("script.id"))
 
-    story: Mapped["StoryEntity"] = relationship("StoryEntity", back_populates="evidences")
+    script: Mapped["ScriptEntity"] = relationship("ScriptEntity", back_populates="evidences")

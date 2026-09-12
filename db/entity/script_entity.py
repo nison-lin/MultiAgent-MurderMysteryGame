@@ -35,3 +35,4 @@ class ScriptEntity(BaseEntity):
     
     characters: Mapped[list["CharacterEntity"]] = relationship("CharacterEntity", back_populates="script", cascade="all, delete-orphan")
     backstory: Mapped["BackstoryEntity"] = relationship("BackstoryEntity", back_populates="script", uselist=False, cascade="all, delete-orphan")
+    evidences: Mapped[list["EvidenceEntity"]] = relationship("EvidenceEntity", back_populates="script", cascade="all, delete-orphan")
