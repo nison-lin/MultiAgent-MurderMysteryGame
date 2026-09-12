@@ -20,15 +20,15 @@ class CharacterEntity(BaseEntity):
     """角色实体类"""
     __tablename__ = "character"
 
-    name: Mapped[str] = mapped_column(String(50))
-    gender: Mapped[CharacterGenderEnum] = mapped_column()
-    age: Mapped[int] = mapped_column()
-    profession: Mapped[str] = mapped_column(String(50))
-    background: Mapped[str] = mapped_column(String(255))
-    is_murderer: Mapped[bool] = mapped_column()
+    name: Mapped[str | None] = mapped_column(String(50))
+    gender: Mapped[CharacterGenderEnum | None] = mapped_column()
+    age: Mapped[int | None] = mapped_column()
+    profession: Mapped[str | None] = mapped_column(String(50))
+    background: Mapped[str | None] = mapped_column(String(255))
+    is_murderer: Mapped[bool | None] = mapped_column()
     avatar_path: Mapped[str | None] = mapped_column(Text)
     avatar_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
-    script_id: Mapped[int] = mapped_column(ForeignKey("script.id"))
-    
+    script_id: Mapped[int | None] = mapped_column(ForeignKey("script.id"))
+
     script: Mapped["ScriptEntity"] = relationship("ScriptEntity", back_populates="characters")
     stories: Mapped[list["StoryEntity"]] = relationship("StoryEntity", back_populates="character", cascade="all, delete-orphan")

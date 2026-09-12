@@ -24,12 +24,12 @@ class ScriptEntity(BaseEntity):
     """剧本实体类"""
     __tablename__ = "script"
 
-    title: Mapped[str] = mapped_column(String(50))
+    title: Mapped[str | None] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(String(255))
-    duration_hours: Mapped[int] = mapped_column()
-    player_count: Mapped[int] = mapped_column()
-    script_type: Mapped[ScriptTypeEnum] = mapped_column()
-    status: Mapped[ScriptStatusEnum] = mapped_column()
+    duration_hours: Mapped[int | None] = mapped_column()
+    player_count: Mapped[int | None] = mapped_column()
+    script_type: Mapped[ScriptTypeEnum | None] = mapped_column()
+    status: Mapped[ScriptStatusEnum | None] = mapped_column(default=ScriptStatusEnum.DRAFT)
     cover_image_path: Mapped[str | None] = mapped_column(Text)
     cover_image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
     

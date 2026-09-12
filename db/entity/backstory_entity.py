@@ -9,7 +9,7 @@ class BackstoryEntity(BaseEntity):
     """背景故事实体类"""
     __tablename__ = "backstory"
 
-    content: Mapped[str] = mapped_column(Text)
-    script_id: Mapped[int] = mapped_column(ForeignKey("script.id"))
+    content: Mapped[str | None] = mapped_column(Text)
+    script_id: Mapped[int | None] = mapped_column(ForeignKey("script.id"))
 
     script: Mapped["ScriptEntity"] = relationship("ScriptEntity", back_populates="backstory")

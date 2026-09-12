@@ -9,9 +9,9 @@ class StoryEntity(BaseEntity):
     """故事实体类"""
     __tablename__ = "story"
 
-    content: Mapped[str] = mapped_column(Text)
-    chapter: Mapped[int] = mapped_column()
-    character_id: Mapped[int] = mapped_column(ForeignKey("character.id"))
+    content: Mapped[str | None] = mapped_column(Text)
+    chapter: Mapped[int | None] = mapped_column()
+    character_id: Mapped[int | None] = mapped_column(ForeignKey("character.id"))
 
     character: Mapped["CharacterEntity"] = relationship("CharacterEntity", back_populates="stories")
     evidences: Mapped[list["EvidenceEntity"]] = relationship("EvidenceEntity", back_populates="story", cascade="all, delete-orphan")

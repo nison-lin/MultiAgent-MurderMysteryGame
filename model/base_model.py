@@ -26,12 +26,21 @@ class BaseDataModel(BaseModel, ABC):
 
     def to_dict(self) -> dict[str, Any]:
         """将模型转换为字典"""
-        dict = self.model_dump()
+        dict = self.model_dump(exclude_none=True)
         # 移除自动管理的字段
         dict.pop('id', None)
         dict.pop('created_at', None)
         dict.pop('updated_at', None)
         return dict
+
+    def validate(self) -> bool:
+        """验证数据完整性"""
+        try:
+            json_model = self.model_dump(exclude_none=True)
+            self.model_validate(json_model)
+            return True
+        except Exception:
+            return False
 
 
 class Image:
