@@ -13,12 +13,16 @@ class BaseRepository[EntityType: BaseEntity, ModelType: BaseDataModel]:
         self.entity_cls = entity_cls
         self.model_cls = model_cls
 
-    def get_by_id(self, id: int) -> EntityType:
-        """根据ID获取实体"""
+    def get_by_id(self, id: int) -> ModelType | None:
+        """根据ID获取模型"""
         entity = self.session.get(self.entity_cls, id)
         if not entity:
-            raise ValueError("未找到该实体")
-        return entity
+            return None
+        return self._to_model(entity)
+
+    def get_entity_by_id(self, id: int) -> EntityType | None:
+        """根据ID获取实体"""
+        return self.session.get(self.entity_cls, id)
 
     def save(self, model: ModelType) -> ModelType:
         """保存实体"""
@@ -48,10 +52,25 @@ class BaseRepository[EntityType: BaseEntity, ModelType: BaseDataModel]:
 
     def _to_entity(self, model: ModelType) -> EntityType:
         """将模型转换为实体"""
-        model_dict = model.to_dict()
-        return self.entity_cls(**model_dict)
+        return self.entity_cls(**model.to_dict())
+
+    def _to_any_entity[AnyEntityType: BaseEntity](
+            self,
+            model: BaseDataModel,
+            entity_cls: type[AnyEntityType]
+        ) -> AnyEntityType:
+        """将任意模型转换为指定的实体类型"""
+        return entity_cls(**model.to_dict())
 
     def _to_model(self, entity: EntityType) -> ModelType:
         """将实体转换为模型"""
         model = self.model_cls.model_validate(entity)
         return model
+
+    def _to_any_model[AnyModelType: BaseDataModel](
+                self,
+                entity: BaseEntity,
+                model_cls: type[AnyModelType]
+            ) -> AnyModelType:
+            """将任意实体转换为指定的模型类型"""
+            return model_cls.model_validate(entity)

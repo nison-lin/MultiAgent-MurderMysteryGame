@@ -15,7 +15,10 @@ class EvidenceRepository(BaseRepository[EvidenceEntity, Evidence]):
     def __init__(self, session: Session):
         super().__init__(session, EvidenceEntity, Evidence)
         
-    def get_by_script_id(self, script_id: int) -> Sequence[EvidenceEntity]:
+    def get_by_script_id(self, script_id: int) -> Sequence[Evidence]:
         """根据剧本ID获取证据列表"""
         stmt = select(EvidenceEntity).where(EvidenceEntity.script_id == script_id)
-        return self.session.execute(stmt).scalars().all()
+        evidence_entities = self.session.execute(stmt).scalars().all()
+        if not evidence_entities:
+            return []
+        return [super()._to_model(evidence_entity) for evidence_entity in evidence_entities]

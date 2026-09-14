@@ -15,7 +15,10 @@ class StoryRepository(BaseRepository[StoryEntity, Story]):
     def __init__(self, session: Session):
         super().__init__(session, StoryEntity, Story)
 
-    def get_by_character_id(self, character_id: int) -> Sequence[StoryEntity]:
+    def get_by_character_id(self, character_id: int) -> Sequence[Story]:
         """根据角色ID获取故事列表"""
         stmt = select(StoryEntity).where(StoryEntity.character_id == character_id)
-        return self.session.execute(stmt).scalars().all()
+        story_entities = self.session.execute(stmt).scalars().all()
+        if not story_entities:
+            return []
+        return [super()._to_model(story_entity) for story_entity in story_entities]

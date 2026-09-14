@@ -1,6 +1,7 @@
 """剧本实体类"""
 
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -8,6 +9,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..image_storage_type import ImageStorageType
 
 from .base_entity import BaseEntity
+
+if TYPE_CHECKING:
+    from .backstory_entity import BackstoryEntity
+    from .character_entity import CharacterEntity
+    from .evidence_entity import EvidenceEntity
 
 class ScriptTypeEnum(str, Enum):
     """剧本类型枚举"""
@@ -34,5 +40,5 @@ class ScriptEntity(BaseEntity):
     cover_image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
     
     characters: Mapped[list["CharacterEntity"]] = relationship("CharacterEntity", back_populates="script", cascade="all, delete-orphan")
-    backstory: Mapped["BackstoryEntity"] = relationship("BackstoryEntity", back_populates="script", uselist=False, cascade="all, delete-orphan")
+    backstory: Mapped["BackstoryEntity | None"] = relationship("BackstoryEntity", back_populates="script", cascade="all, delete-orphan")
     evidences: Mapped[list["EvidenceEntity"]] = relationship("EvidenceEntity", back_populates="script", cascade="all, delete-orphan")

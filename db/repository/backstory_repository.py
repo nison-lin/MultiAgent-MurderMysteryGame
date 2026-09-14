@@ -16,7 +16,10 @@ class BackstoryRepository(BaseRepository[BackstoryEntity, Backstory]):
     def __init__(self, session: Session):
         super().__init__(session, BackstoryEntity, Backstory)
         
-    def get_by_script_id(self, script_id: int) -> BackstoryEntity | None:
+    def get_by_script_id(self, script_id: int) -> Backstory | None:
         """根据角色ID获取背景故事"""
         stmt = select(BackstoryEntity).where(BackstoryEntity.script_id == script_id)
-        return self.session.execute(stmt).scalar_one_or_none()
+        backstory_entity = self.session.execute(stmt).scalar_one_or_none()
+        if not backstory_entity:
+            return None
+        return super()._to_model(backstory_entity)
