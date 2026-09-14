@@ -33,7 +33,7 @@ class BaseRepository[EntityType: BaseEntity, ModelType: BaseDataModel]:
 
     def delete(self, id: int) -> bool:
         """删除实体"""
-        entity = self.get_by_id(id)
+        entity = self.get_entity_by_id(id)
         if not entity:
             return False
         self.session.delete(entity)
@@ -43,24 +43,25 @@ class BaseRepository[EntityType: BaseEntity, ModelType: BaseDataModel]:
         """更新实体"""
         if not model.id:
             return False
-        entity = self.get_by_id(model.id)
+        entity = self.get_entity_by_id(model.id)
         if not entity:
             return False
-        for key, value in model.to_dict().items():
+        for key, value in model.to_dict(with_create=True).items():
             setattr(entity, key, value)
         return True
 
-    def _to_entity(self, model: ModelType) -> EntityType:
+    def _to_entity(self, model: ModelType, is_update: bool = False) -> EntityType:
         """将模型转换为实体"""
-        return self.entity_cls(**model.to_dict())
+        return self.entity_cls(**model.to_dict(with_create=is_update))
 
     def _to_any_entity[AnyEntityType: BaseEntity](
             self,
             model: BaseDataModel,
-            entity_cls: type[AnyEntityType]
+            entity_cls: type[AnyEntityType],
+            is_update: bool = False
         ) -> AnyEntityType:
         """将任意模型转换为指定的实体类型"""
-        return entity_cls(**model.to_dict())
+        return entity_cls(**model.to_dict(with_create=is_update))
 
     def _to_model(self, entity: EntityType) -> ModelType:
         """将实体转换为模型"""

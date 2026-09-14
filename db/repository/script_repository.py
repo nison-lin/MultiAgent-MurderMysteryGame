@@ -33,7 +33,7 @@ class ScriptRepository(BaseRepository[ScriptEntity, Script]):
         script_entity = self.get_entity_by_id(script_id)
         if not script_entity:
             raise DataError("剧本不存在")
-        evidece_entities = [super()._to_any_entity(evidence, EvidenceEntity) for evidence in evidences]
+        evidece_entities = [super()._to_any_entity(evidence, EvidenceEntity, True) for evidence in evidences]
         script_entity.evidences = evidece_entities
         self.session.flush()
         return True
@@ -75,7 +75,7 @@ class ScriptRepository(BaseRepository[ScriptEntity, Script]):
         script_entity = self.get_entity_by_id(script_id)
         if not script_entity:
             raise DataError("剧本不存在")
-        character_entities = [super()._to_any_entity(character, CharacterEntity) for character in characters]
+        character_entities = [super()._to_any_entity(character, CharacterEntity, True) for character in characters]
         script_entity.characters = character_entities
         self.session.flush()
         return True
@@ -103,7 +103,7 @@ class ScriptRepository(BaseRepository[ScriptEntity, Script]):
         script_entity = self.get_entity_by_id(script_id)
         if not script_entity:
             raise DataError("剧本不存在")
-        script_entity.backstory = super()._to_any_entity(backstory, BackstoryEntity)
+        script_entity.backstory = super()._to_any_entity(backstory, BackstoryEntity, True)
         self.session.flush()
         return True
     

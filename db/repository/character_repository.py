@@ -39,7 +39,7 @@ class CharacterRepository(BaseRepository[CharacterEntity, Character]):
         character_entity = self.get_entity_by_id(character_id)
         if not character_entity:
             raise DataError("角色不存在")
-        story_entities = [super()._to_any_entity(story, StoryEntity) for story in stories]
+        story_entities = [super()._to_any_entity(story, StoryEntity, True) for story in stories]
         character_entity.stories = story_entities
         self.session.flush()
         return True
