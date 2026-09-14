@@ -6,6 +6,12 @@ from typing import Optional, Any
 
 from pydantic import BaseModel, Field, ConfigDict
 
+_AUTO_FIELDS = frozenset({"id", "created_at", "updated_at"})
+
+def _is_missing(value: Any) -> bool:
+    """判断字段值是否视为缺失：None、空字符串、空列表"""
+    return value is None or value == "" or value == []
+
 class BaseDataModel(BaseModel, ABC):
     """模型基类"""
 
@@ -26,24 +32,38 @@ class BaseDataModel(BaseModel, ABC):
 
     def to_dict(self) -> dict[str, Any]:
         """将模型转换为字典"""
-        dict = self.model_dump(exclude_none=True)
+        transfered_dict = self.model_dump(exclude_none=True)
         # 移除自动管理的字段
-        dict.pop('id', None)
-        dict.pop('created_at', None)
-        dict.pop('updated_at', None)
-        return dict
+        for name in _AUTO_FIELDS:
+            transfered_dict.pop(name, None)
+        return transfered_dict
 
-    def validate(self) -> bool:
-        """验证数据完整性"""
-        try:
-            json_model = self.model_dump(exclude_none=True)
-            self.model_validate(json_model)
-            return True
-        except Exception:
-            return False
+    def is_complete(self, strict: bool = False) -> list[str]:
+        """返回缺失（None、空字符串、空列表）的字段名，嵌套模型以 a.b 形式给出路径"""
+        missing: list[str] = []
+        fields = _AUTO_FIELDS if strict else []
+        for name in type(self).model_fields:
+            if name in _AUTO_FIELDS:
+                continue
+            value = getattr(self, name)
+            if _is_missing(value):
+                missing.append(name)
+            elif isinstance(value, BaseDataModel):
+                # 嵌套模型：递归检查，路径加上当前字段名前缀
+                missing.extend(f"{name}.{sub}" for sub in value.is_complete())
+            elif isinstance(value, (list, tuple)):
+                # 列表元素中的模型：路径带上下标
+                for index, item in enumerate(value):
+                    if isinstance(item, BaseDataModel):
+                        missing.extend(
+                            f"{name}[{index}].{sub}" for sub in item.is_complete()
+                        )
+                    elif _is_missing(item):
+                        missing.append(f"{name}[{index}]")
+        return missing
 
 
-class Image:
+class Image(BaseDataModel):
     """图片模型"""
 
     image_path: str = Field(..., description="图片地址")

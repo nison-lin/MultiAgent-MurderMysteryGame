@@ -4,7 +4,7 @@ from .errors import (
     LLMError,
     ConfigError,
     UserInputError,
-    DBError,
+    DataError,
     MiniMaxError,
     OSSError,
 )
@@ -13,7 +13,7 @@ __all__ = [
     "LLMError",
     "ConfigError",
     "UserInputError",
-    "DBError",
+    "DataError",
     "MiniMaxError",
     "OSSError",
 ]

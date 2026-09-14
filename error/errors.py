@@ -12,8 +12,8 @@ class UserInputError(Exception):
     """用户输入异常"""
     pass
 
-class DBError(Exception):
-    """数据库相关异常"""
+class DataError(Exception):
+    """数据相关异常"""
     pass
 
 class MiniMaxError(Exception):
