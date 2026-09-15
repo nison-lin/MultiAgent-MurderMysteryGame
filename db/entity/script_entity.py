@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Enum as SAEnum
 
 from ..image_storage_type import ImageStorageType
 
@@ -34,8 +35,13 @@ class ScriptEntity(BaseEntity):
     description: Mapped[str | None] = mapped_column(String(255))
     duration_hours: Mapped[int | None] = mapped_column()
     player_count: Mapped[int | None] = mapped_column()
-    script_type: Mapped[ScriptTypeEnum | None] = mapped_column()
-    status: Mapped[ScriptStatusEnum | None] = mapped_column(default=ScriptStatusEnum.DRAFT)
+    script_type: Mapped[ScriptTypeEnum | None] = mapped_column(
+        SAEnum(ScriptTypeEnum, values_callable=lambda e: [m.value for m in e],validate_strings=True)
+    )
+    status: Mapped[ScriptStatusEnum | None] = mapped_column(
+        SAEnum(ScriptStatusEnum, values_callable=lambda e: [m.value for m in e],validate_strings=True),
+        default=ScriptStatusEnum.DRAFT
+    )
     cover_image_path: Mapped[str | None] = mapped_column(Text)
     cover_image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
     

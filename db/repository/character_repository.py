@@ -35,12 +35,13 @@ class CharacterRepository(BaseRepository[CharacterEntity, Character]):
         return [super()._to_any_model(story_entity, Story) for story_entity in character_entity.stories]
 
     def update_stories(self, character_id: int, stories: list[Story]) -> bool:
-        """更新角色的故事列表"""
+        """更新角色的故事列表。带id的故事就地更新（id与created_at不变），其余作为新行插入"""
         character_entity = self.get_entity_by_id(character_id)
         if not character_entity:
             raise DataError("角色不存在")
-        story_entities = [super()._to_any_entity(story, StoryEntity, True) for story in stories]
-        character_entity.stories = story_entities
+        character_entity.stories = self._merge_collection(
+            character_entity.stories, stories, StoryEntity
+        )
         self.session.flush()
         return True
     

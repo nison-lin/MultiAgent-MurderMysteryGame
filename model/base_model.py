@@ -6,8 +6,9 @@ from typing import Optional, Any
 
 from pydantic import BaseModel, Field, ConfigDict
 
+# 由数据库管理的字段：id 自增，created_at 由 server_default 写入，
+# updated_at 由 onupdate 刷新。三者都不允许从模型侧写入。
 _AUTO_FIELDS = frozenset({"id", "created_at", "updated_at"})
-_AUTO_FIELDS_WITH_CREATE = frozenset({"id", "updated_at"})
 
 def _is_missing(value: Any) -> bool:
     """判断字段值是否视为缺失：None、空字符串、空列表"""
@@ -31,12 +32,10 @@ class BaseDataModel(BaseModel, ABC):
     created_at: Optional[datetime] = Field(None, description="创建时间")
     updated_at: Optional[datetime] = Field(None, description="更新时间")
 
-    def to_dict(self, with_create: bool = False) -> dict[str, Any]:
-        """将模型转换为字典"""
+    def to_dict(self) -> dict[str, Any]:
+        """将模型转换为字典，id与创建/更新时间由数据库管理，一律剔除"""
         transfered_dict = self.model_dump(exclude_none=True)
-        # 移除自动管理的字段
-        fields = _AUTO_FIELDS_WITH_CREATE if with_create else _AUTO_FIELDS
-        for name in fields:
+        for name in _AUTO_FIELDS:
             transfered_dict.pop(name, None)
         return transfered_dict
 

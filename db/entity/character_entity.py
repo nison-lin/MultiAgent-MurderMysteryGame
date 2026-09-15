@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Enum as SAEnum
 
 from ..image_storage_type import ImageStorageType
 
@@ -26,13 +27,17 @@ class CharacterEntity(BaseEntity):
     __tablename__ = "character"
 
     name: Mapped[str | None] = mapped_column(String(50))
-    gender: Mapped[CharacterGenderEnum | None] = mapped_column()
+    gender: Mapped[CharacterGenderEnum | None] = mapped_column(
+        SAEnum(CharacterGenderEnum, values_callable=lambda e: [m.value for m in e],validate_strings=True)
+    )
     age: Mapped[int | None] = mapped_column()
     profession: Mapped[str | None] = mapped_column(String(50))
     background: Mapped[str | None] = mapped_column(String(255))
     is_murderer: Mapped[bool | None] = mapped_column()
     avatar_path: Mapped[str | None] = mapped_column(Text)
-    avatar_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
+    avatar_storage_type: Mapped[ImageStorageType | None] = mapped_column(
+        SAEnum(ImageStorageType, values_callable=lambda e: [m.value for m in e],validate_strings=True)
+    )
     script_id: Mapped[int | None] = mapped_column(ForeignKey("script.id"))
 
     script: Mapped["ScriptEntity | None"] = relationship("ScriptEntity", back_populates="characters")

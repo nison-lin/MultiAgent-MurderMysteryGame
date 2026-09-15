@@ -1,6 +1,5 @@
 """剧本数据访问类"""
 
-from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from db.entity.backstory_entity import BackstoryEntity
@@ -29,12 +28,13 @@ class ScriptRepository(BaseRepository[ScriptEntity, Script]):
         return [super()._to_any_model(evidence_entity, Evidence) for evidence_entity in script_entity.evidences]
 
     def update_evidences(self, script_id: int, evidences: list[Evidence]) -> bool:
-        """更新剧本的证据列表"""
+        """更新剧本的证据列表。带id的证据就地更新（id与created_at不变），其余作为新行插入"""
         script_entity = self.get_entity_by_id(script_id)
         if not script_entity:
             raise DataError("剧本不存在")
-        evidece_entities = [super()._to_any_entity(evidence, EvidenceEntity, True) for evidence in evidences]
-        script_entity.evidences = evidece_entities
+        script_entity.evidences = self._merge_collection(
+            script_entity.evidences, evidences, EvidenceEntity
+        )
         self.session.flush()
         return True
 
@@ -75,8 +75,9 @@ class ScriptRepository(BaseRepository[ScriptEntity, Script]):
         script_entity = self.get_entity_by_id(script_id)
         if not script_entity:
             raise DataError("剧本不存在")
-        character_entities = [super()._to_any_entity(character, CharacterEntity, True) for character in characters]
-        script_entity.characters = character_entities
+        script_entity.characters = self._merge_collection(
+            script_entity.characters, characters, CharacterEntity
+        )
         self.session.flush()
         return True
     
@@ -99,11 +100,15 @@ class ScriptRepository(BaseRepository[ScriptEntity, Script]):
         return super()._to_any_model(script_entity.backstory, Backstory)
 
     def update_backstory(self, script_id: int, backstory: Backstory) -> bool:
-        """更新剧本的背景故事"""
+        """更新剧本的背景故事。已存在时就地更新（id与created_at不变），否则新建"""
         script_entity = self.get_entity_by_id(script_id)
         if not script_entity:
             raise DataError("剧本不存在")
-        script_entity.backstory = super()._to_any_entity(backstory, BackstoryEntity, True)
+        existing = script_entity.backstory
+        if existing is not None:
+            self._apply_columns(existing, backstory)
+        else:
+            script_entity.backstory = self._to_any_entity(backstory, BackstoryEntity)
         self.session.flush()
         return True
     

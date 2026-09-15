@@ -1,7 +1,5 @@
 """背景故事数据访问类"""
 
-from collections.abc import Sequence
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

@@ -10,7 +10,7 @@ from model.base_model import Image
 class Script(BaseDataModel):
     """剧本模型"""
 
-    name: str | None = Field(None, description="剧本名称")
+    title: str | None = Field(None, description="剧本名称")
     description: str | None = Field(None, description="剧本简介")
     duration_hours: int | None = Field(None, description="剧本时长（小时）")
     player_count: int | None = Field(None, description="剧本人数")
