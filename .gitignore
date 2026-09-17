@@ -71,6 +71,8 @@ dmypy.json
 # Logs
 *.log
 logs/
+log.py
+log.txt
 
 # Database
 *.sqlite3
