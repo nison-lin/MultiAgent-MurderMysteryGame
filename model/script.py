@@ -3,7 +3,6 @@
 from pydantic import Field
 
 from db.entity.script_entity import ScriptStatusEnum, ScriptTypeEnum
-from db.image_storage_type import ImageStorageType
 from model.base_model import BaseDataModel
 from model.base_model import Image
 

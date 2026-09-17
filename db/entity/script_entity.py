@@ -43,7 +43,9 @@ class ScriptEntity(BaseEntity):
         default=ScriptStatusEnum.DRAFT
     )
     cover_image_path: Mapped[str | None] = mapped_column(Text)
-    cover_image_storage_type: Mapped[ImageStorageType | None] = mapped_column(Text)
+    cover_image_storage_type: Mapped[ImageStorageType | None] = mapped_column(
+        SAEnum(ImageStorageType, values_callable=lambda e: [m.value for m in e],validate_strings=True)
+    )
     
     characters: Mapped[list["CharacterEntity"]] = relationship("CharacterEntity", back_populates="script", cascade="all, delete-orphan")
     backstory: Mapped["BackstoryEntity | None"] = relationship("BackstoryEntity", back_populates="script", cascade="all, delete-orphan")
