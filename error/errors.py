@@ -27,3 +27,7 @@ class MiniMaxError(BaseError):
 class OSSError(BaseError):
     """阿里云OSS相关异常"""
     pass
+
+class StorageError(BaseError):
+    """存储相关异常"""
+    pass

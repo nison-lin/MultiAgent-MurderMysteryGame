@@ -8,6 +8,7 @@ from .errors import (
     DataError,
     MiniMaxError,
     OSSError,
+    StorageError
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "DataError",
     "MiniMaxError",
     "OSSError",
+    "StorageError"
 ]

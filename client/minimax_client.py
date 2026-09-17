@@ -54,6 +54,7 @@ class MiniMaxClientWrapper:
             result = [base64.b64decode(b64) for b64 in data.get("data", {}).get("image_base64") or []]
             if not result:
                 raise MiniMaxError("MiniMax没有返回图片")
+            return result
 
         except BaseError:
             raise

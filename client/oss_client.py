@@ -32,17 +32,26 @@ class OSSClientWrapper:
         self.bucketName = bucketName
         self.endpoint = endpoint
 
-    async def upload(self, data: bytes, object_key: str) -> str:
+    async def upload(self, data: bytes, object_key: str, forbid_overwrite: bool = False) -> str:
         """
         上传二进制数据到OSS，返回可访问的URL。
+        forbid_overwrite为True时，若object_key已存在则抛出OSSError而不覆盖。
+        该限制由OSS服务端的x-oss-forbid-overwrite头保证，无先查后写的竞态。
         """
+        headers = {"x-oss-forbid-overwrite": "true"} if forbid_overwrite else None
         try:
-            await asyncio.to_thread(self.bucket.put_object, object_key, data)
+            await asyncio.to_thread(self.bucket.put_object, object_key, data, headers=headers)
+        except oss2.exceptions.ObjectAlreadyExists as e:
+            raise OSSError(f"OSS上已存在同名文件，拒绝覆盖: {object_key}") from e
         except BaseError:
             raise
         except Exception as e:
             raise OSSError(f"上传文件到OSS时发生错误: {e}")
 
+        return self.build_url(object_key)
+
+    def build_url(self, object_key: str) -> str:
+        """根据object_key拼出可访问的URL"""
         if self.customDomain:
             return f"{self.customDomain.rstrip('/')}/{object_key}"
         scheme, _, host = self.endpoint.partition("://")
@@ -50,6 +59,15 @@ class OSSClientWrapper:
             host = scheme
             scheme = "https"
         return f"{scheme}://{self.bucketName}.{host}/{object_key}"
+
+    async def exists(self, object_key: str) -> bool:
+        """判断OSS上是否已存在指定object_key"""
+        try:
+            return await asyncio.to_thread(self.bucket.object_exists, object_key)
+        except BaseError:
+            raise
+        except Exception as e:
+            raise OSSError(f"查询OSS文件是否存在时发生错误: {e}")
 
     async def delete(self, object_key: str) -> None:
         """
