@@ -6,7 +6,7 @@ import httpx
 from dotenv import load_dotenv
 from typing import List, Optional
 
-from error.errors import ConfigError, MiniMaxError
+from error.errors import BaseError, ConfigError, MiniMaxError
 
 load_dotenv()
 
@@ -51,7 +51,11 @@ class MiniMaxClientWrapper:
             if data.get("base_resp", {}).get("status_code") != 0:
                 raise MiniMaxError(f"MiniMax返回错误: {data.get('base_resp', {}).get('status_msg')}")
 
-            return [base64.b64decode(b64) for b64 in data["data"]["image_base64"]]
+            result = [base64.b64decode(b64) for b64 in data.get("data", {}).get("image_base64") or []]
+            if not result:
+                raise MiniMaxError("MiniMax没有返回图片")
 
+        except BaseError:
+            raise
         except Exception as e:
             raise MiniMaxError(f"调用MiniMax图片生成API时发生错误: {e}")

@@ -1,25 +1,29 @@
 """自定义异常"""
 
-class LLMError(Exception):
+class BaseError(Exception):
+    """异常基类"""
+    pass
+
+class LLMError(BaseError):
     """LLM相关异常"""
     pass
 
-class ConfigError(Exception):
+class ConfigError(BaseError):
     """配置相关异常"""
     pass
 
-class UserInputError(Exception):
+class UserInputError(BaseError):
     """用户输入异常"""
     pass
 
-class DataError(Exception):
+class DataError(BaseError):
     """数据相关异常"""
     pass
 
-class MiniMaxError(Exception):
+class MiniMaxError(BaseError):
     """MiniMax相关异常"""
     pass
 
-class OSSError(Exception):
+class OSSError(BaseError):
     """阿里云OSS相关异常"""
     pass

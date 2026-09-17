@@ -6,7 +6,7 @@ import oss2
 from dotenv import load_dotenv
 from typing import Optional
 
-from error.errors import ConfigError, OSSError
+from error.errors import BaseError, ConfigError, OSSError
 
 load_dotenv()
 
@@ -38,6 +38,8 @@ class OSSClientWrapper:
         """
         try:
             await asyncio.to_thread(self.bucket.put_object, object_key, data)
+        except BaseError:
+            raise
         except Exception as e:
             raise OSSError(f"上传文件到OSS时发生错误: {e}")
 
@@ -55,5 +57,7 @@ class OSSClientWrapper:
         """
         try:
             await asyncio.to_thread(self.bucket.delete_object, object_key)
+        except BaseError:
+            raise
         except Exception as e:
             raise OSSError(f"删除OSS文件时发生错误: {e}")

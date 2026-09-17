@@ -1,6 +1,7 @@
 """异常模块"""
 
 from .errors import (
+    BaseError,
     LLMError,
     ConfigError,
     UserInputError,
@@ -10,6 +11,7 @@ from .errors import (
 )
 
 __all__ = [
+    "BaseError",
     "LLMError",
     "ConfigError",
     "UserInputError",

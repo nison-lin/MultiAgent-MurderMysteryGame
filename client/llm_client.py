@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from typing import AsyncGenerator, List, Dict, Optional
 
-from error.errors import ConfigError, LLMError
+from error.errors import BaseError, ConfigError, LLMError
 
 load_dotenv()
 
@@ -16,12 +16,21 @@ class LLMClientWrapper:
         """
         初始化客户端。优先使用传入参数，如果未提供，则从环境变量加载。
         """
-        self.model = model or os.getenv("LLM_MODEL_ID", "")
-        apiKey = apiKey or os.getenv("LLM_API_KEY", "")
-        baseUrl = baseUrl or os.getenv("LLM_BASE_URL", "")
-        timeout = timeout or int(os.getenv("LLM_TIMEOUT", 60))
-        if not all([self.model, apiKey, baseUrl]):
-            raise ConfigError("模型ID、API密钥和服务地址必须被提供或在.env文件中定义。")
+        try:
+            self.model = model or os.getenv("LLM_MODEL_ID", "")
+            apiKey = apiKey or os.getenv("LLM_API_KEY", "")
+            baseUrl = baseUrl or os.getenv("LLM_BASE_URL", "")
+            try:
+                timeout = timeout or int(os.getenv("LLM_TIMEOUT", 60))
+            except ValueError as e:
+                raise ConfigError(f"模型的timeout必须是整数")
+            if not all([self.model, apiKey, baseUrl]):
+                raise ConfigError("模型ID、API密钥和服务地址必须被提供或在.env文件中定义。")
+
+        except BaseError:
+            raise
+        except Exception as e:
+            raise ConfigError(f"模型配置出错：{e}")
 
         self.client = AsyncOpenAI(api_key=apiKey, base_url=baseUrl, timeout=timeout)
 
@@ -38,9 +47,14 @@ class LLMClientWrapper:
             )
 
             if not response.choices:
-                raise LLMError(f"模型响应中没有choices。")
-            return response.choices[0].message.content
+                raise LLMError("模型响应中没有choices。")
+            content = response.choices[0].message.content
+            if content is None:
+                raise LLMError("模型响应内容为空。")
+            return content
 
+        except BaseError:
+            raise
         except Exception as e:
             raise LLMError(f"调用LLM API时发生错误: {e}")
 
@@ -63,6 +77,8 @@ class LLMClientWrapper:
                 if content:
                     yield content
 
+        except BaseError:
+            raise
         except Exception as e:
             raise LLMError(f"调用LLM API时发生错误: {e}")
         
@@ -85,5 +101,7 @@ class LLMClientWrapper:
                 return result
             raise LLMError(f"模型响应中既没有内容也没有工具调用。")
 
+        except BaseError:
+            raise
         except Exception as e:
             raise LLMError(f"调用LLM API时发生错误: {e}")
