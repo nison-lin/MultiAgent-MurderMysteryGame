@@ -35,8 +35,6 @@ class OSSClientWrapper:
     async def upload(self, data: bytes, object_key: str, forbid_overwrite: bool = False) -> str:
         """
         上传二进制数据到OSS，返回可访问的URL。
-        forbid_overwrite为True时，若object_key已存在则抛出OSSError而不覆盖。
-        该限制由OSS服务端的x-oss-forbid-overwrite头保证，无先查后写的竞态。
         """
         headers = {"x-oss-forbid-overwrite": "true"} if forbid_overwrite else None
         try:

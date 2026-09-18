@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import List, Optional
 
 from db.image_storage_type import ImageStorageType
-from error.errors import ConfigError, OSSError, StorageError
+from error.errors import ConfigError, OSSError, StorageError, UserInputError
 from client.oss_client import OSSClientWrapper
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,8 +22,17 @@ def reset_oss_client() -> None:
     """清除缓存的OSS客户端，下次调用时按当前环境变量重建。供测试与配置热更新使用"""
     _get_oss_client.cache_clear()
 
+def _safe_basename(filename: str) -> str:
+    """剥掉filename中的所有目录成分，只保留最后一段。
+    """
+    base = filename.replace("\\", "/").rsplit("/", 1)[-1]
+    if not base or set(base) == {"."}:
+        raise UserInputError(f"非法的图片文件名: {filename}")
+    return base
+
 def _build_filename(filename: Optional[str], index: int, total: int) -> str:
-    base = filename or uuid.uuid4().hex
+    """构建文件名"""
+    base = _safe_basename(filename) if filename else uuid.uuid4().hex
     if total > 1:
         base = f"{base}_{index}"
     return f"{base}.png"
@@ -36,19 +45,17 @@ def save_local(
     ) -> List[str]:
     """
     将图片保存到本地LOCAL_IMAGE_DIR下，返回本地路径列表。
-    filename为文件名（不含扩展名），未传入时用uuid生成；多张图片时会自动加序号区分。
-    directory为LOCAL_IMAGE_DIR/image下的子目录。路径不存在会自动创建。
-    base_dir覆盖LOCAL_IMAGE_DIR，供未配置任何存储时的默认兜底使用。
     """
     baseDir = base_dir or os.getenv("LOCAL_IMAGE_DIR", "")
     if not baseDir:
         raise ConfigError("本地图片存储必须在.env文件中配置LOCAL_IMAGE_DIR。")
 
+    allowedRoot = os.path.abspath(baseDir) + os.sep
     localDir = os.path.join(baseDir, "image")
     if directory:
         localDir = os.path.join(localDir, directory)
     final = os.path.abspath(localDir)
-    if not final.startswith(os.path.abspath(baseDir) + os.sep):
+    if not final.startswith(allowedRoot):
         raise ConfigError("非法的图片路径")
 
     os.makedirs(localDir, exist_ok=True)
@@ -56,6 +63,10 @@ def save_local(
     paths: List[str] = []
     for i, image in enumerate(images):
         path = os.path.join(localDir, _build_filename(filename, i, len(images)))
+        # 兜底：文件名已剥掉目录成分，这里再确认最终路径未越出baseDir
+        if not os.path.abspath(path).startswith(allowedRoot):
+            _cleanup_local(paths)
+            raise ConfigError("非法的图片路径")
         try:
             # O_EXCL 由操作系统保证"不存在才创建"的原子性，无先查后写的竞态
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
@@ -85,9 +96,7 @@ def _cleanup_local(paths: List[str]) -> None:
 
 async def save_oss(images: List[bytes], filename: Optional[str] = None, directory: Optional[str] = None) -> List[str]:
     """
-    将图片并发上传到阿里云OSS，返回URL列表（顺序与images一致）。
-    filename为文件名（不含扩展名），未传入时用uuid生成；多张图片时会自动加序号区分。
-    directory为OSS对象key前缀，未传入时为"minimax"。
+    将图片并发上传到阿里云OSS，返回object_key列表。
     """
     if not images:
         raise OSSError("上传文件为空")
@@ -102,7 +111,7 @@ async def save_oss(images: List[bytes], filename: Optional[str] = None, director
 
     firstError = next((r for r in results if isinstance(r, BaseException)), None)
     if firstError is None:
-        return [str(url) for url in results]
+        return objectKeys
 
     # 有失败：回滚已成功的部分
     uploaded = [key for key, result in zip(objectKeys, results) if not isinstance(result, BaseException)]
@@ -119,8 +128,7 @@ async def save_oss(images: List[bytes], filename: Optional[str] = None, director
 
 def update_local(path: str, image: bytes) -> str:
     """
-    覆盖写本地图片文件，返回该路径。
-    先写临时文件再原子替换，写入中途失败不会损坏原文件。
+    更新本地图片文件，返回该路径。
     """
     directory = os.path.dirname(os.path.abspath(path))
     if not os.path.isdir(directory):
@@ -141,10 +149,11 @@ def update_local(path: str, image: bytes) -> str:
 
 async def update_oss(object_key: str, image: bytes) -> str:
     """
-    覆盖写OSS上的指定对象，返回其URL。
+    更新OSS上的指定对象，返回其object_key。
     """
     ossClient = _get_oss_client()
-    return await ossClient.upload(image, object_key)
+    await ossClient.upload(image, object_key)
+    return object_key
 
 def delete_local(path: str) -> None:
     """
@@ -162,15 +171,13 @@ async def delete_oss(object_key: str) -> None:
     await ossClient.delete(object_key)
 
 async def save(
-        images: List[bytes], 
-        filename: Optional[str] = None, 
-        directory: Optional[str] = None, 
+        images: List[bytes],
+        filename: Optional[str] = None,
+        directory: Optional[str] = None,
         storage_type: Optional[ImageStorageType] = None
     ) -> tuple[List[str], ImageStorageType]:
     """
-    保存图片，优先使用本地存储：若配置了LOCAL_IMAGE_DIR则存本地，
-    否则若配置了阿里云OSS则上传OSS，
-    否则存到项目根目录下的image文件夹。
+    保存图片。
     """
     if storage_type:
         if storage_type == ImageStorageType.LOCAL:
@@ -191,10 +198,7 @@ async def save(
 
 async def update(location: str, image: bytes, storage_type: ImageStorageType) -> str:
     """
-    覆盖写指定位置的图片，返回其路径或URL。
-    storage_type指定存储方式，决定调用update_local还是update_oss。
-    location为update_local的path参数或update_oss的object_key参数，
-    通常直接取数据库中已存的image_path。
+    更新指定位置的图片，返回其位置。
     """
     if storage_type == ImageStorageType.LOCAL:
         return update_local(location, image)
@@ -204,8 +208,7 @@ async def update(location: str, image: bytes, storage_type: ImageStorageType) ->
 
 async def delete(location: str, storage_type: ImageStorageType) -> None:
     """
-    删除图片，storage_type指定存储方式："local"或"oss"，决定调用delete_local还是delete_oss。
-    location为delete_local的path参数或delete_oss的object_key参数。
+    删除图片。
     """
     if storage_type == ImageStorageType.LOCAL:
         delete_local(location)
@@ -213,3 +216,13 @@ async def delete(location: str, storage_type: ImageStorageType) -> None:
         await delete_oss(location)
     else:
         raise StorageError(f"未知的storage_type: {storage_type}，必须是'local'或'oss'。")
+
+def to_url(location: str, storage_type: ImageStorageType) -> str:
+    """
+    把存储位置换成可展示的地址。OSS的object_key按bucket/自定义域名拼成URL。
+    """
+    if storage_type == ImageStorageType.LOCAL:
+        return location
+    if storage_type == ImageStorageType.OSS:
+        return _get_oss_client().build_url(location)
+    raise StorageError(f"未知的storage_type: {storage_type}，必须是'local'或'oss'。")

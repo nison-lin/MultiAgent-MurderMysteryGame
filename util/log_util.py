@@ -14,8 +14,9 @@ class LogUtil:
             self.log_path = log_path
         else:
             default_path = str(Path(__file__).resolve().parent.parent)
-            os.makedirs(os.path.join(default_path, "logs"), exist_ok=True)
-            self.log_path = os.path.join(default_path, 'log.txt')
+            path = os.path.join(default_path, "logs")
+            os.makedirs(path, exist_ok=True)
+            self.log_path = os.path.join(path, 'log.txt')
 
 
     # 写入日志

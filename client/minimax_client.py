@@ -21,7 +21,10 @@ class MiniMaxClientWrapper:
         apiKey = apiKey or os.getenv("MINIMAX_API_KEY", "")
         groupId = groupId or os.getenv("MINIMAX_GROUP_ID", "")
         self.model = model or os.getenv("MINIMAX_IMAGE_MODEL", "image-01")
-        self.timeout = timeout or int(os.getenv("MINIMAX_TIMEOUT", 60))
+        try:
+            self.timeout = timeout or int(os.getenv("MINIMAX_TIMEOUT", 60))
+        except ValueError:
+            raise ConfigError("MiniMax的timeout配置参数必须为整数")
         if not all([apiKey, groupId]):
             raise ConfigError("MiniMax API密钥和GroupId必须被提供或在.env文件中定义。")
 
@@ -51,7 +54,7 @@ class MiniMaxClientWrapper:
             if data.get("base_resp", {}).get("status_code") != 0:
                 raise MiniMaxError(f"MiniMax返回错误: {data.get('base_resp', {}).get('status_msg')}")
 
-            result = [base64.b64decode(b64) for b64 in data.get("data", {}).get("image_base64") or []]
+            result = [base64.b64decode(b64) for b64 in (data.get("data") or {}).get("image_base64", [])]
             if not result:
                 raise MiniMaxError("MiniMax没有返回图片")
             return result
