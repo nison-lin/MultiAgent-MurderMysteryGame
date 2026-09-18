@@ -31,3 +31,7 @@ class OSSError(BaseError):
 class StorageError(BaseError):
     """存储相关异常"""
     pass
+
+class DatabaseError(BaseError):
+    """数据库相关异常"""
+    pass
