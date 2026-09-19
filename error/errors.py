@@ -35,3 +35,7 @@ class StorageError(BaseError):
 class DatabaseError(BaseError):
     """数据库相关异常"""
     pass
+
+class WebSocketError(BaseError):
+    """WebSocket相关异常"""
+    pass
