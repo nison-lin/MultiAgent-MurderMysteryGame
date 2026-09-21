@@ -55,8 +55,44 @@ def flatten_images(model_cls: type[BaseDataModel], data: dict[str, Any]) -> dict
         flattened[_storage_type_column(prefix)] = image.get("image_storage_type")
     return flattened
 
+def _pair_children(models: list[Any], entities: list[Any]) -> list[tuple[Any, Any]]:
+    """把子模型与子实体一一对应。优先按id匹配，id缺失时退回按下标对齐。"""
+    by_id = {getattr(entity, "id", None): entity for entity in entities}
+    pairs: list[tuple[Any, Any]] = []
+    for index, child_model in enumerate(models):
+        entity = by_id.get(child_model.id) if child_model.id is not None else None
+        if entity is None:
+            entity = entities[index] if index < len(entities) else None
+        if entity is not None:
+            pairs.append((child_model, entity))
+    return pairs
+
+def _unflatten_nested(model: BaseDataModel, entity: BaseEntity) -> None:
+    """递归处理关联字段上的嵌套模型，让子模型的Image字段同样被组装。
+
+    模型的关联字段名与实体的relationship同名，据此配对下钻。
+    """
+    for field_name in type(model).model_fields:
+        value = getattr(model, field_name, None)
+        if value is None:
+            continue
+        if isinstance(value, BaseDataModel):
+            child_entity = getattr(entity, field_name, None)
+            if child_entity is not None:
+                unflatten_images(value, child_entity)
+        elif isinstance(value, list) and value and isinstance(value[0], BaseDataModel):
+            child_entities = getattr(entity, field_name, None) or []
+            for child_model, child_entity in _pair_children(value, list(child_entities)):
+                unflatten_images(child_model, child_entity)
+
 def unflatten_images(model: BaseDataModel, entity: BaseEntity) -> BaseDataModel:
-    """从实体的扁平列组装嵌套Image字段，就地写回模型并返回该模型。"""
+    """从实体的扁平列组装嵌套Image字段，就地写回模型并返回该模型。
+
+    关联字段上的子模型会递归处理，故Script.characters[i].avatar_image之类
+    的嵌套图片也能正确组装。
+    """
+    _unflatten_nested(model, entity)
+
     prefixes = _IMAGE_FIELD_PREFIXES.get(type(model))
     if not prefixes:
         return model

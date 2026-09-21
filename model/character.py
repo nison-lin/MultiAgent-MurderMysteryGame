@@ -4,6 +4,7 @@ from pydantic import Field
 
 from db.entity.character_entity import CharacterGenderEnum
 from model.base_model import BaseDataModel, Image
+from model.story import Story
 
 class Character(BaseDataModel):
     """角色模型"""
@@ -16,3 +17,6 @@ class Character(BaseDataModel):
     is_murderer: bool | None = Field(None, description="是否为凶手")
     avatar_image: Image | None = Field(None, description="角色头像")
     script_id: int | None = Field(None, description="剧本ID")
+    
+    # 关联字段：None表示本次不涉及该关联，空列表表示清空
+    stories: list[Story] | None = Field(None, description="角色的故事列表")
