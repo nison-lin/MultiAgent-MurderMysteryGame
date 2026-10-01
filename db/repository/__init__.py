@@ -6,6 +6,7 @@ from .character_repository import CharacterRepository
 from .evidence_repository import EvidenceRepository
 from .script_repository import ScriptRepository
 from .story_repository import StoryRepository
+from .room_repository import RoomRepository
 
 __all__ = [
     "BaseRepository",
@@ -14,4 +15,5 @@ __all__ = [
     "EvidenceRepository",
     "ScriptRepository",
     "StoryRepository",
+    "RoomRepository",
 ]

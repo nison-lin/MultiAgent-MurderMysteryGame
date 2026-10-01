@@ -6,6 +6,7 @@ from .character import Character
 from .evidence import Evidence
 from .script import Script
 from .story import Story
+from .room import Room
 
 __all__ = [
     "BaseDataModel",
@@ -14,5 +15,6 @@ __all__ = [
     "Character",
     "Evidence",
     "Script",
-    "Story"
+    "Story",
+    "Room"
 ]

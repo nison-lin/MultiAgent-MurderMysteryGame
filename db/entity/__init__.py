@@ -6,6 +6,7 @@ from .character_entity import CharacterEntity, CharacterGenderEnum
 from .evidence_entity import EvidenceEntity
 from .script_entity import ScriptEntity, ScriptTypeEnum, ScriptStatusEnum
 from .story_entity import StoryEntity
+from .room_entity import RoomEntity, PhaseEnum, StatusEnum
 
 __all__ = [
     "BaseEntity",
@@ -17,4 +18,7 @@ __all__ = [
     "ScriptTypeEnum",
     "ScriptStatusEnum",
     "StoryEntity",
+    "RoomEntity",
+    "PhaseEnum",
+    "StatusEnum",
 ]
