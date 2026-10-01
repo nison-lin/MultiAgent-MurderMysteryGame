@@ -5,6 +5,7 @@ from .image_util import (
     save_local, save_oss, update_local, update_oss, delete_local, delete_oss,
     save, update, delete, to_url, reset_oss_client,
 )
+from .uuid_util import create_uuid
 
 __all__ = [
     "LogUtil",
@@ -19,4 +20,5 @@ __all__ = [
     "delete",
     "to_url",
     "reset_oss_client",
+    "create_uuid"
 ]
