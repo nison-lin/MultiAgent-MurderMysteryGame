@@ -11,6 +11,7 @@ from core.websocket.ws_config import WebSocketConfig, get_ws_config
 from core.websocket.ws_message import WSMessage
 from error.errors import WebSocketError
 from util.log_util import LogUtil
+from util.uuid_util import create_uuid
 
 _log = LogUtil()
 
@@ -44,9 +45,10 @@ class ConnectionManager:
         self._lock = asyncio.Lock()
         self._monitor: Optional[asyncio.Task] = None
 
-    async def connect(self, websocket: WebSocket, session_id: str) -> Connection:
+    async def connect(self, websocket: WebSocket, session_id: str | None = None) -> Connection:
         """接受连接并登记。同一会话重连时挤掉旧连接（刷新页面即走这条路）"""
         await websocket.accept()
+        session_id = session_id or create_uuid("session_id")
 
         async with self._lock:
             replaced = self._connections.get(session_id)

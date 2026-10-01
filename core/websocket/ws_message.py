@@ -6,6 +6,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from util.uuid_util import create_uuid
+
 
 class MessageType(str, Enum):
     """消息类型。client_前缀为客户端发出，其余为服务端发出"""
@@ -17,15 +19,20 @@ class MessageType(str, Enum):
     ERROR = "error"
 
     # 客户端动作
-    CLIENT_ASK = "client_ask"            # 向某个角色提问
-    CLIENT_ACTION = "client_action"      # 搜证、指认凶手等
+    START = "start"                      # 开始游戏
+    TALK = "talk"                        # 发送讨论消息
+    PRIVATE_TALK = "private_talk"        # 私聊讨论
+    IDENTIFY = "identify"                # 指认凶手
+    PAUSE = "pause"                      # 暂停游戏
 
     # 服务端推送
-    CHARACTER_REPLY = "character_reply"  # 角色完整回复
-    STREAM_DELTA = "stream_delta"        # 角色回复的流式增量
+    AGENT_TALK = "agent_talk"            # agent发送讨论消息
+    STREAM_TALK = "stream_talk"          # agent流式发送讨论消息
+    AGENT_PRIVATE = "agent_private"      # agent回复私聊
+    STREAM_PRIVATE = "stream_private"    # agent流式回复私聊
     STREAM_END = "stream_end"            # 一次流式回复结束
-    GAME_EVENT = "game_event"            # 线索解锁、进入下一章等
-    SESSION_STATE = "session_state"      # 当前进度快照
+    NEW_CHAPTER = "new_chapter"          # 进入下一章
+    SEND_EVIDENCE = "send_evidence"      # 发送证据
 
 
 class WSMessage(BaseModel):
@@ -45,10 +52,24 @@ class WSMessage(BaseModel):
         return self.model_dump_json(exclude_none=True)
 
 
-def error_message(reason: str, request_id: Optional[str] = None) -> WSMessage:
+def error_message(reason: str, request_id: str|None = None) -> WSMessage:
     """构造一条错误消息"""
     return WSMessage(
         type=MessageType.ERROR,
         data={"reason": reason},
-        request_id=request_id,
+        request_id=request_id or create_uuid(MessageType.ERROR),
+    )
+
+def start_message(script_id: int, room_id: int|None = None, request_id: str|None = None):
+    """构建一条开始游戏消息"""
+    is_continue = room_id is not None
+    data: dict[str, Any] = {"is_continue": is_continue}
+    if is_continue:
+        data["room_id"] = room_id
+    else:
+        data["script_id"] = script_id
+    return WSMessage(
+        type=MessageType.START,
+        data=data,
+        request_id=request_id or create_uuid(MessageType.START)
     )
