@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 from dotenv import load_dotenv
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -70,6 +70,14 @@ class Database:
             raise
         finally:
             session.close()
+
+    def check_connection(self) -> None:
+        """发一条SELECT 1确认数据库可达。engine是惰性的，构造成功不代表能连上"""
+        try:
+            with self.engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"数据库连接失败：{e}")
 
     def create_tables(self) -> None:
         """按实体定义建表，已存在的表不会被改动"""

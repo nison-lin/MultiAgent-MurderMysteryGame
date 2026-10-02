@@ -23,7 +23,8 @@ _log = LogUtil()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """启动时初始化数据库与连接管理器，关闭时释放资源"""
-    init_database()
+    database = init_database()
+    database.check_connection()
     config = init_ws_config()
     manager = init_ws_manager(config)
     manager.start_monitor()
