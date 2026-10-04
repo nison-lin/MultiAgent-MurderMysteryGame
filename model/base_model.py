@@ -56,9 +56,9 @@ class BaseDataModel(BaseModel, ABC):
 
     model_config = _MODEL_CONFIG
 
-    id: Optional[int] = Field(None, description="id")
-    created_at: Optional[datetime] = Field(None, description="创建时间")
-    updated_at: Optional[datetime] = Field(None, description="更新时间")
+    id: Optional[int] = Field(default=None, description="id")
+    created_at: Optional[datetime] = Field(default=None, description="创建时间")
+    updated_at: Optional[datetime] = Field(default=None, description="更新时间")
 
     def to_dict(self) -> dict[str, Any]:
         """将模型转换为字典，id与创建/更新时间由数据库管理，一律剔除"""

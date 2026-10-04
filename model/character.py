@@ -9,14 +9,14 @@ from model.story import Story
 class Character(BaseDataModel):
     """角色模型"""
 
-    name: str | None = Field(None, description="角色名称")
-    gender: CharacterGenderEnum | None = Field(None, description="角色性别")
-    age: int | None = Field(None, description="角色年龄")
-    profession: str | None = Field(None, description="角色职业")
-    background: str | None = Field(None, description="角色背景")
-    is_murderer: bool | None = Field(None, description="是否为凶手")
-    avatar_image: Image | None = Field(None, description="角色头像")
-    script_id: int | None = Field(None, description="剧本ID")
+    name: str | None = Field(default=None, description="角色名称")
+    gender: CharacterGenderEnum | None = Field(default=None, description="角色性别")
+    age: int | None = Field(default=None, description="角色年龄")
+    profession: str | None = Field(default=None, description="角色职业")
+    background: str | None = Field(default=None, description="角色背景")
+    is_murderer: bool | None = Field(default=None, description="是否为凶手")
+    avatar_image: Image | None = Field(default=None, description="角色头像")
+    script_id: int | None = Field(default=None, description="剧本ID")
     
     # 关联字段：None表示本次不涉及该关联，空列表表示清空
-    stories: list[Story] | None = Field(None, description="角色的故事列表")
+    stories: list[Story] | None = Field(default=None, description="角色的故事列表")
