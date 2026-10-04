@@ -16,6 +16,7 @@ class StoryEntity(BaseEntity):
 
     content: Mapped[str | None] = mapped_column(Text)
     chapter: Mapped[int | None] = mapped_column()
+    is_end: Mapped[bool | None] = mapped_column()
     character_id: Mapped[int | None] = mapped_column(ForeignKey("character.id"))
 
     character: Mapped["CharacterEntity | None"] = relationship("CharacterEntity", back_populates="stories")

@@ -9,4 +9,5 @@ class Story(BaseDataModel):
     
     content: str | None = Field(None, description="故事内容")
     chapter: int | None = Field(None, description="章节")
+    is_end: bool | None = Field(None, description="是否为结尾章节")
     character_id: int | None = Field(None, description="角色ID")
