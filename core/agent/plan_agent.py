@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from client.llm_client import LLMClientWrapper
 from core.agent.react_agent import ReActAgent
@@ -72,15 +72,22 @@ class PlanAgent(ReActAgent):
         answer = await self.summarize(task, results)
         return await self.on_final_answer(answer)
 
-    async def plan(self, task: str) -> List[str]:
+    async def plan(self, task: str, prompt: Optional[str] = None) -> List[str]:
         """
         让模型将任务拆解为步骤列表；解析失败时把整个任务作为单一步骤。
         通过 react() 规划：工具以 function calling 方式提供给模型，模型可先调用工具收集信息再给出计划。
+        :param prompt: 已格式化好的规划提示词，为空时使用 PLAN_PROMPT 并以 task 格式化
         """
         self.reset()
-        content = await self.react(self.PLAN_PROMPT.format(task=task))
+        if prompt is None:
+            prompt = self.PLAN_PROMPT.format(task=task)
+        content = await self.react(prompt)
 
-        steps = self._parse_steps(content)
+        parsed = self._parse_steps(content)
+        if isinstance(parsed, dict):
+            parsed = [parsed]
+        # 字典步骤转为JSON文本，便于后续拼接到提示词中
+        steps = [s if isinstance(s, str) else json.dumps(s, ensure_ascii=False) for s in parsed]
         if not steps:
             self.logger.warning(f"[{self.name}] 计划解析失败，按单步执行。模型输出：{content}")
             steps = [task]
@@ -122,15 +129,24 @@ class PlanAgent(ReActAgent):
         return "\n\n".join(f"{i}. {r.step}\n结果：{r.result}" for i, r in enumerate(results, 1))
 
     @staticmethod
-    def _parse_steps(content: str) -> List[str]:
-        """从模型输出中提取JSON数组，兼容被 ```json 代码块包裹或带有多余文字的情况"""
-        start, end = content.find("["), content.rfind("]")
-        if start == -1 or end <= start:
-            return []
-        try:
-            data = json.loads(content[start:end + 1])
-        except json.JSONDecodeError:
-            return []
-        if not isinstance(data, list):
-            return []
-        return [str(s).strip() for s in data if str(s).strip()]
+    def _parse_steps(content: str) -> Union[Dict[str, Any], List[Any]]:
+        """
+        从模型输出中提取JSON，兼容被 ```json 代码块包裹或带有多余文字的情况。
+        JSON对象解析为字典；JSON数组解析为列表（元素为对象时即为字典列表）；解析失败返回空列表。
+        """
+        decoder = json.JSONDecoder()
+        # 依次尝试从每个 '{' 或 '[' 处解析，跳过前面文字中可能出现的括号
+        for i, ch in enumerate(content):
+            if ch not in "{[":
+                continue
+            try:
+                data, _ = decoder.raw_decode(content, i)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(data, dict):
+                return data
+            if isinstance(data, list):
+                # 去掉空字符串元素，字典等其他元素原样保留
+                return [s.strip() if isinstance(s, str) else s for s in data
+                        if not isinstance(s, str) or s.strip()]
+        return []
