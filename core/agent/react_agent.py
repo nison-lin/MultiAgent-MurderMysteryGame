@@ -1,4 +1,4 @@
-"""ReAct Agent基类"""
+"""ReAct Agent"""
 
 import json
 from typing import Any, Dict, List, Optional
@@ -10,7 +10,7 @@ from util.log_util import LogUtil
 
 class ReActAgent:
     """
-    ReAct（Reasoning + Acting）Agent基类，所有Agent都应继承此类。
+    ReAct Agent，边调用工具边思考。
 
     循环流程：
         Thought   模型基于上下文进行推理
@@ -87,17 +87,24 @@ class ReActAgent:
 
     async def run(self, user_input: str) -> str:
         """
-        执行一次完整的 ReAct 循环，返回最终回答。
+        执行一次完整的 ReAct 循环，返回经过 on_final_answer 处理后的最终回答。
         """
         if not self.keep_history:
             self.reset()
+        answer = await self.react(user_input)
+        return await self.on_final_answer(answer)
 
+    async def react(self, user_input: str) -> str:
+        """
+        ReAct 循环本体：基于当前历史继续对话，返回模型的原始回答，不触发 on_final_answer。
+        供 run() 及子类（如 PlanAgent 逐步执行时）复用。
+        """
         self.history.append({"role": "user", "content": user_input})
 
         # 没有工具时退化为普通对话
         if not self.tools:
             answer = await self.llm.think_without_tools(self._build_messages(), self.temperature)  # type: ignore
-            return await self._finish(answer)
+            return self._finish(answer)
 
         tool_schemas = [tool.to_schema() for tool in self.tools.values()]
 
@@ -106,7 +113,7 @@ class ReActAgent:
 
             # 无工具调用，说明模型已给出最终回答
             if not message.tool_calls:
-                return await self._finish(message.content or "")
+                return self._finish(message.content or "")
 
             # Thought：模型在调用工具前输出的推理内容
             if message.content:
@@ -140,7 +147,7 @@ class ReActAgent:
         self.logger.warning(f"[{self.name}] 达到最大步数 {self.max_steps}，强制生成最终回答")
         messages = self._build_messages() + [{"role": "user", "content": self.FORCE_ANSWER_PROMPT}]
         answer = await self.llm.think_without_tools(messages, self.temperature)  # type: ignore
-        return await self._finish(answer)
+        return self._finish(answer)
 
     # ---------------- 内部方法 ----------------
 
@@ -148,11 +155,10 @@ class ReActAgent:
         """拼接系统提示词与历史消息"""
         return [{"role": "system", "content": self.build_system_prompt()}] + self.history
 
-    async def _finish(self, answer: str) -> str:
-        """记录最终回答并返回"""
+    def _finish(self, answer: str) -> str:
+        """校验并记录模型回答"""
         if not answer:
             raise LLMError(f"[{self.name}] 模型未给出最终回答")
-        answer = await self.on_final_answer(answer)
         self.history.append({"role": "assistant", "content": answer})
         return answer
 
