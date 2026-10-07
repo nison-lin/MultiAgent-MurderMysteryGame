@@ -7,8 +7,8 @@ from typing import Optional
 
 from fastapi import WebSocket
 
-from core.websocket.ws_config import WebSocketConfig, get_ws_config
-from core.websocket.ws_message import WSMessage
+from websocket.ws_config import WebSocketConfig, get_ws_config
+from websocket.ws_message import WSMessage
 from error.errors import WebSocketError
 from util.log_util import LogUtil
 from util.uuid_util import create_uuid

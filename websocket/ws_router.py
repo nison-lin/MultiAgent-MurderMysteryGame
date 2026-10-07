@@ -6,9 +6,9 @@ from typing import Awaitable, Callable, Optional
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
-from core.websocket.ws_config import get_ws_config
-from core.websocket.ws_manager import Connection, get_ws_manager
-from core.websocket.ws_message import MessageType, WSMessage, error_message
+from websocket.ws_config import get_ws_config
+from websocket.ws_manager import Connection, get_ws_manager
+from websocket.ws_message import MessageType, WSMessage, error_message
 from error.errors import BaseError, WebSocketError
 from util.log_util import LogUtil
 

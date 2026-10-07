@@ -209,8 +209,8 @@ import json
 from typing import Any, List, NamedTuple, Optional
 
 from client.llm_client import LLMClientWrapper
-from core.agent.plan_agent import PlanAgent
-from core.agent.tool.base_tool import BaseTool
+from agent.plan_agent import PlanAgent
+from agent.tool.base_tool import BaseTool
 from db.database import get_session
 from db.entity.script_entity import ScriptStatusEnum
 from db.repository import CharacterRepository, ScriptRepository

@@ -4,7 +4,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 from client.llm_client import LLMClientWrapper
-from core.agent.tool.base_tool import BaseTool
+from agent.tool.base_tool import BaseTool
 from error.errors import LLMError
 from util.log_util import LogUtil
 

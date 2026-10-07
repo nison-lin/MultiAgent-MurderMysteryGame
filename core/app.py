@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.websocket.ws_config import init_ws_config
-from core.websocket.ws_manager import get_ws_manager, init_ws_manager
-from core.websocket.ws_router import router as ws_router
+from websocket.ws_config import init_ws_config
+from websocket.ws_manager import get_ws_manager, init_ws_manager
+from websocket.ws_router import router as ws_router
 from db.database import get_database, init_database
 from util.log_util import LogUtil
 

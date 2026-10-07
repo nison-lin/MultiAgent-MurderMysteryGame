@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 from client.llm_client import LLMClientWrapper
-from core.agent.react_agent import ReActAgent
-from core.agent.tool.base_tool import BaseTool
+from agent.react_agent import ReActAgent
+from agent.tool.base_tool import BaseTool
 
 
 @dataclass
