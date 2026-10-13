@@ -6,6 +6,7 @@ from .sub_agent import SubAgent
 from .private_chat_agent import ChatDecision, PrivateChatAgent
 from .discussion_agent import DiscussionAgent
 from .accusation_agent import Accusation, AccusationAgent
+from .player_agent import PlayerAgent, PlayerPhaseEnum, assign_private_evidences
 
 __all__ = [
     "ReActAgent",
@@ -17,4 +18,7 @@ __all__ = [
     "DiscussionAgent",
     "AccusationAgent",
     "Accusation",
+    "PlayerAgent",
+    "PlayerPhaseEnum",
+    "assign_private_evidences",
 ]

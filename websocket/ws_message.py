@@ -31,8 +31,16 @@ class MessageType(str, Enum):
     AGENT_PRIVATE = "agent_private"      # agent回复私聊
     STREAM_PRIVATE = "stream_private"    # agent流式回复私聊
     STREAM_END = "stream_end"            # 一次流式回复结束
+    AGENT_IDENTIFY = "agent_identify"    # agent指认凶手
     NEW_CHAPTER = "new_chapter"          # 进入下一章
     SEND_EVIDENCE = "send_evidence"      # 发送证据
+
+    # 主持方推送的游戏阶段
+    SEARCH_EVIDENCE = "search_evidence"  # 进入搜证环节
+    TALK_TURN = "talk_turn"              # 轮到某个角色公开发言
+    PRIVATE_START = "private_start"      # 私聊环节开始
+    PRIVATE_END = "private_end"          # 私聊环节结束
+    IDENTIFY_START = "identify_start"    # 指认凶手环节开始
 
 
 class WSMessage(BaseModel):

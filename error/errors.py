@@ -39,3 +39,7 @@ class DatabaseError(BaseError):
 class WebSocketError(BaseError):
     """WebSocket相关异常"""
     pass
+
+class GameError(BaseError):
+    """游戏流程相关异常"""
+    pass

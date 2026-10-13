@@ -160,10 +160,16 @@ class MemoryManager:
     def add_evidence(self, game_id: str, evidence: Evidence, role_id: str | None = None) -> MemoryItem:
         """
         发放证据：公开证据写入公共记忆；否则写入搜到该证据的角色的私有记忆。
+        同一条公开证据可能被多个角色各自读取，带ID的公开证据只写入一次，重复写入时返回已有的记忆。
         :param role_id: 获得证据的角色，非公开证据必须提供
         """
-        metadata = {"name": evidence.name, "chapter": evidence.chapter}
+        metadata = {"name": evidence.name, "chapter": evidence.chapter, "evidence_id": evidence.id}
         if evidence.is_public:
+            if evidence.id is not None:
+                existing = self._game(game_id).public_store.query(
+                    filters={"category": MemoryCategoryEnum.EVIDENCE, "evidence_id": evidence.id})
+                if existing:
+                    return existing[0]
             return self.publish(game_id, evidence.content or "", MemoryCategoryEnum.EVIDENCE, metadata)
         if role_id is None:
             raise DataError(f"非公开证据 {evidence.name} 需要指定获得证据的角色")
