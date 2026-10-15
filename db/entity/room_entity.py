@@ -11,6 +11,8 @@ class PhaseEnum(str, Enum):
     READ = "阅读"
     SEARCH = "搜证"
     TALK = "讨论"
+    PRIVATE = "私聊"
+    IDENTIFY = "指认"
 
 class StatusEnum(str, Enum):
     IN_PROGRESS = "进行中"

@@ -12,6 +12,7 @@ from websocket.ws_config import init_ws_config
 from websocket.ws_manager import get_ws_manager, init_ws_manager
 from websocket.ws_router import router as ws_router
 from db.database import get_database, init_database
+from game.game_handler import init_game_handler
 from util.log_util import LogUtil
 
 # 全项目唯一的环境变量加载点
@@ -22,16 +23,19 @@ _log = LogUtil()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """启动时初始化数据库与连接管理器，关闭时释放资源"""
+    """启动时初始化数据库、连接管理器与游戏主持方，关闭时释放资源"""
     database = init_database()
     database.check_connection()
     config = init_ws_config()
     manager = init_ws_manager(config)
     manager.start_monitor()
+    game_handler = init_game_handler()
     _log.log("应用启动完成")
     try:
         yield
     finally:
+        # 先结束进行中的游戏，再关闭连接，游戏结束前的消息仍能送达
+        await game_handler.shutdown()
         await get_ws_manager().shutdown()
         get_database().dispose()
         _log.log("应用已关闭")

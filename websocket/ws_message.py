@@ -41,6 +41,7 @@ class MessageType(str, Enum):
     PRIVATE_START = "private_start"      # 私聊环节开始
     PRIVATE_END = "private_end"          # 私聊环节结束
     IDENTIFY_START = "identify_start"    # 指认凶手环节开始
+    GAME_END = "game_end"                # 游戏结束，公布指认结果与真凶
 
 
 class WSMessage(BaseModel):
@@ -68,14 +69,21 @@ def error_message(reason: str, request_id: str|None = None) -> WSMessage:
         request_id=request_id or create_uuid(MessageType.ERROR),
     )
 
-def start_message(script_id: int, room_id: int|None = None, request_id: str|None = None):
-    """构建一条开始游戏消息"""
+def start_message(
+        script_id: int,
+        room_id: int|None = None,
+        request_id: str|None = None,
+        character_id: int|None = None,
+    ):
+    """构建一条开始游戏消息。character_id 为人类玩家扮演的角色，未提供时由主持方随机选择非凶手角色"""
     is_continue = room_id is not None
     data: dict[str, Any] = {"is_continue": is_continue}
     if is_continue:
         data["room_id"] = room_id
     else:
         data["script_id"] = script_id
+        if character_id is not None:
+            data["character_id"] = character_id
     return WSMessage(
         type=MessageType.START,
         data=data,
