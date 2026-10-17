@@ -3,6 +3,9 @@
 import json
 from typing import Any, Dict, List, Optional
 
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from pydantic import ValidationError
+
 from client.llm_client import LLMClientWrapper
 from agent.tool.base_tool import BaseTool
 from error.errors import LLMError
@@ -57,7 +60,7 @@ class ReActAgent:
         for tool in tools or []:
             self.register_tool(tool)
 
-        self.history: List[Dict[str, Any]] = []
+        self.history: List[BaseMessage] = []
 
     # ---------------- 工具管理 ----------------
 
@@ -99,85 +102,73 @@ class ReActAgent:
         ReAct 循环本体：基于当前历史继续对话，返回模型的原始回答，不触发 on_final_answer。
         供 run() 及子类（如 PlanAgent 逐步执行时）复用。
         """
-        self.history.append({"role": "user", "content": user_input})
+        self.history.append(HumanMessage(content=user_input))
 
         # 没有工具时退化为普通对话
         if not self.tools:
-            answer = await self.llm.think_without_tools(self._build_messages(), self.temperature)  # type: ignore
+            answer = await self.llm.think_without_tools(self._build_messages(), self.temperature)
             return self._finish(answer)
 
-        tool_schemas = [tool.to_schema() for tool in self.tools.values()]
+        tools = list(self.tools.values())
 
         for step in range(1, self.max_steps + 1):
-            message = await self.llm.think_with_tools(self._build_messages(), self.temperature, tool_schemas)  # type: ignore
+            message = await self.llm.think_with_tools(self._build_messages(), self.temperature, tools)
 
             # 无工具调用，说明模型已给出最终回答
-            if not message.tool_calls:
-                return self._finish(message.content or "")
+            if not message.tool_calls and not message.invalid_tool_calls:
+                return self._finish(message.text)
 
             # Thought：模型在调用工具前输出的推理内容
-            if message.content:
-                self.logger.log(f"[{self.name}] Step {step} Thought: {message.content}")
+            if message.text:
+                self.logger.log(f"[{self.name}] Step {step} Thought: {message.text}")
 
-            self.history.append({
-                "role": "assistant",
-                "content": message.content,
-                "tool_calls": [
-                    {
-                        "id": call.id,
-                        "type": "function",
-                        "function": {"name": call.function.name, "arguments": call.function.arguments},
-                    }
-                    for call in message.tool_calls
-                ],
-            })
+            self.history.append(message)
 
             # Action -> Observation
             for call in message.tool_calls:
-                self.logger.log(f"[{self.name}] Step {step} Action: {call.function.name}({call.function.arguments})")
-                observation = await self._execute_tool(call.function.name, call.function.arguments)
+                self.logger.log(f"[{self.name}] Step {step} Action: {call['name']}({call['args']})")
+                observation = await self._execute_tool(call["name"], call["args"])
                 self.logger.log(f"[{self.name}] Step {step} Observation: {observation}")
-                self.history.append({
-                    "role": "tool",
-                    "tool_call_id": call.id,
-                    "content": observation,
-                })
+                self.history.append(ToolMessage(content=observation, tool_call_id=call["id"]))
+
+            # 参数不是合法 JSON 的调用也要回填结果，否则下一次请求会因缺少 tool 消息被拒绝
+            for invalid in message.invalid_tool_calls:
+                observation = f"错误：工具 {invalid.get('name')} 的参数不是合法的JSON：{invalid.get('error') or invalid.get('args')}"
+                self.logger.warning(f"[{self.name}] Step {step} {observation}")
+                self.history.append(ToolMessage(content=observation, tool_call_id=invalid.get("id") or ""))
 
         # 超过最大步数，强制模型给出最终回答
         self.logger.warning(f"[{self.name}] 达到最大步数 {self.max_steps}，强制生成最终回答")
-        messages = self._build_messages() + [{"role": "user", "content": self.FORCE_ANSWER_PROMPT}]
-        answer = await self.llm.think_without_tools(messages, self.temperature)  # type: ignore
+        messages = self._build_messages() + [HumanMessage(content=self.FORCE_ANSWER_PROMPT)]
+        answer = await self.llm.think_without_tools(messages, self.temperature)
         return self._finish(answer)
 
     # ---------------- 内部方法 ----------------
 
-    def _build_messages(self) -> List[Dict[str, Any]]:
+    def _build_messages(self) -> List[BaseMessage]:
         """拼接系统提示词与历史消息"""
-        return [{"role": "system", "content": self.build_system_prompt()}] + self.history
+        return [SystemMessage(content=self.build_system_prompt()), *self.history]
 
     def _finish(self, answer: str) -> str:
         """校验并记录模型回答"""
         if not answer:
             raise LLMError(f"[{self.name}] 模型未给出最终回答")
-        self.history.append({"role": "assistant", "content": answer})
+        self.history.append(AIMessage(content=answer))
         return answer
 
-    async def _execute_tool(self, name: str, arguments: str) -> str:
+    async def _execute_tool(self, name: str, args: Dict[str, Any]) -> str:
         """
         执行工具并将结果转为字符串。
-        工具异常不会中断循环，而是作为 Observation 反馈给模型，让其自行修正。
+        参数校验失败或工具异常都不会中断循环，而是作为 Observation 反馈给模型，让其自行修正。
         """
         tool = self.tools.get(name)
         if tool is None:
             return f"错误：工具 {name} 不存在，可用工具：{', '.join(self.tools)}"
 
         try:
-            kwargs = json.loads(arguments) if arguments else {}
-        except json.JSONDecodeError as e:
-            return f"错误：工具参数不是合法的JSON：{e}"
-
-        try:
-            result = await tool.invoke(**kwargs)
+            result = await tool.ainvoke(args)
+        except ValidationError as e:
+            return f"错误：工具 {name} 的参数不合法：{e}"
         except Exception as e:
             self.logger.warning(f"[{self.name}] 工具 {name} 执行失败：{e}")
             return f"错误：工具 {name} 执行失败：{e}"

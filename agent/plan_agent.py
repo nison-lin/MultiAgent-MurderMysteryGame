@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
+from langchain_core.messages import HumanMessage, SystemMessage
+
 from client.llm_client import LLMClientWrapper
 from agent.react_agent import ReActAgent
 from agent.tool.base_tool import BaseTool
@@ -115,10 +117,10 @@ class PlanAgent(ReActAgent):
     async def summarize(self, task: str, results: List[StepResult]) -> str:
         """汇总各步骤结果，生成最终回答"""
         messages = [
-            {"role": "system", "content": self.build_system_prompt()},
-            {"role": "user", "content": self.SUMMARY_PROMPT.format(task=task, history=self._format_results(results))},
+            SystemMessage(content=self.build_system_prompt()),
+            HumanMessage(content=self.SUMMARY_PROMPT.format(task=task, history=self._format_results(results))),
         ]
-        answer = await self.llm.think_without_tools(messages, self.temperature)  # type: ignore
+        answer = await self.llm.think_without_tools(messages, self.temperature)
         return self._finish(answer)
 
     @staticmethod

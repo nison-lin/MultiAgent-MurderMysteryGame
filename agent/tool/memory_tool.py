@@ -1,11 +1,11 @@
 """所有子 Agent 共用的记忆查询工具"""
 
-from typing import Any, Callable, List
+from typing import Annotated, Any, Callable, List
 
 from agent.memory.base_memory import BaseMemory
 from agent.memory.memory_enum import MemoryCategoryEnum, VisibilityEnum
 from agent.memory.memory_store import MemoryItem
-from agent.tool.base_tool import BaseTool
+from agent.tool.base_tool import BaseTool, create_tool
 from error.errors import UserInputError
 
 # 单次查询最多返回的条数
@@ -43,11 +43,11 @@ def build_memory_tools(memory: BaseMemory, item_filter: ItemFilter | None = None
     """
 
     def search_memory(
-        keyword: str = "",
-        category: str | None = None,
-        source: str | None = None,
-        round: int | None = None,
-        limit: int = 20,
+        keyword: Annotated[str, "内容中包含的关键词，为空表示不限"] = "",
+        category: Annotated[MemoryCategoryEnum | None, "记忆类别，为空表示不限"] = None,
+        source: Annotated[str | None, "信息来源，如某个角色名或“系统”，为空表示不限"] = None,
+        round: Annotated[int | None, "轮次，为空表示不限"] = None,
+        limit: Annotated[int, f"最多返回最近的多少条，默认20，最大{MAX_SEARCH_LIMIT}"] = 20,
     ) -> str:
         filters: dict[str, Any] = {}
         if category:
@@ -64,23 +64,9 @@ def build_memory_tools(memory: BaseMemory, item_filter: ItemFilter | None = None
         return format_items(items[-limit:])
 
     return [
-        BaseTool(
-            name="search_memory",
-            description="检索你记得的信息（剧本、证据、发言、私聊、公告、笔记等），记忆摘要中被省略的内容可以通过它查到",
-            func=search_memory,
-            parameters={
-                "type": "object",
-                "properties": {
-                    "keyword": {"type": "string", "description": "内容中包含的关键词，为空表示不限"},
-                    "category": {
-                        "type": "string",
-                        "enum": [c.value for c in MemoryCategoryEnum],
-                        "description": "记忆类别，为空表示不限",
-                    },
-                    "source": {"type": "string", "description": "信息来源，如某个角色名或“系统”，为空表示不限"},
-                    "round": {"type": "integer", "description": "轮次，为空表示不限"},
-                    "limit": {"type": "integer", "description": f"最多返回最近的多少条，默认20，最大{MAX_SEARCH_LIMIT}"},
-                },
-            },
+        create_tool(
+            "search_memory",
+            "检索你记得的信息（剧本、证据、发言、私聊、公告、笔记等），记忆摘要中被省略的内容可以通过它查到",
+            search_memory,
         ),
     ]
