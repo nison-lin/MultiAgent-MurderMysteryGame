@@ -26,6 +26,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """启动时初始化数据库、连接管理器与游戏主持方，关闭时释放资源"""
     database = init_database()
     database.check_connection()
+    # 自动建表：只创建缺失的表，已存在的表不会被改动，因此每次启动都可以安全执行
+    database.create_tables()
+    _log.log("数据库表已就绪")
     config = init_ws_config()
     manager = init_ws_manager(config)
     manager.start_monitor()

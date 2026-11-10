@@ -80,7 +80,14 @@ class Database:
             raise DatabaseError(f"数据库连接失败：{e}")
 
     def create_tables(self) -> None:
-        """按实体定义建表，已存在的表不会被改动"""
+        """按实体定义建表，已存在的表不会被改动，因此可在每次启动时重复执行。
+
+        建表依据是 BaseEntity.metadata 中已注册的表，而表定义只在对应实体模块被导入时才注册。
+        这里显式导入 db.entity，避免调用方没有导入实体时 create_all 静默地什么都不建。
+        """
+        # 局部导入：db.entity 依赖 db 包，放在模块顶层会与 db/__init__ 形成循环导入
+        import db.entity  # noqa: F401  导入即向 BaseEntity.metadata 注册全部实体
+
         try:
             BaseEntity.metadata.create_all(self.engine)
         except SQLAlchemyError as e:
