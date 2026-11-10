@@ -1,0 +1,31 @@
+# MultiAgent-MurderMysteryGame 运行依赖
+# 环境：Python 3.12+（已在 3.13.9 / Windows 上验证）
+#
+# 版本均为本机实测可用的组合，按「直接依赖」锁定；如需放宽约束，
+# 可把 == 换成 >= 并自行验证（项目使用 LangChain 1.x 的 ChatOpenAI 接口）。
+#
+# 安装：pip install -r requirements.txt
+
+# ---------- Web 服务 ----------
+fastapi==0.135.2
+# [standard] 会带上 websockets（WebSocket 协议必需）与 watchfiles（--reload 热重载），
+# 只装裸 uvicorn 时无法处理 WebSocket 连接。
+uvicorn[standard]==0.42.0
+python-dotenv==1.1.0
+
+# ---------- 数据库 ----------
+SQLAlchemy==2.0.43
+# DATABASE_URL 使用 mysql+pymysql://，驱动必须显式安装
+PyMySQL==1.1.2
+
+# ---------- 数据模型 ----------
+pydantic==2.12.4
+
+# ---------- LLM（OpenAI 协议兼容，默认指向 DeepSeek） ----------
+langchain-core==1.6.12
+langchain-openai==1.7.2
+
+# ---------- 图片生成与对象存储（可选能力，未配置时相关功能不可用） ----------
+# MiniMax 文生图走 httpx；OSS 上传走 oss2
+httpx==0.28.1
+oss2==2.19.1
