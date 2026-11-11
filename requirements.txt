@@ -24,6 +24,8 @@ pydantic==2.12.4
 # ---------- LLM（OpenAI 协议兼容，默认指向 DeepSeek） ----------
 langchain-core==1.6.12
 langchain-openai==1.7.2
+# 主持方的游戏流程状态机（game/game_flow.py）；尚未本机实测，验证后请锁定为 == 具体版本
+langgraph>=1.0,<2.0
 
 # ---------- 图片生成与对象存储（可选能力，未配置时相关功能不可用） ----------
 # MiniMax 文生图走 httpx；OSS 上传走 oss2
