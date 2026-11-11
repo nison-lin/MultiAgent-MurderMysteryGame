@@ -111,9 +111,10 @@ class PlayerAgent:
         self.logger = LogUtil()
 
         llm = llm or LLMClientWrapper()
-        self.private_chat = PrivateChatAgent(memory_manager, self.game_id, self.role_id, llm)
-        self.discussion = DiscussionAgent(memory_manager, self.game_id, self.role_id, llm)
-        self.accusation = AccusationAgent(memory_manager, self.game_id, self.role_id, llm)
+        is_murderer = bool(character.is_murderer)
+        self.private_chat = PrivateChatAgent(memory_manager, self.game_id, self.role_id, llm, is_murderer=is_murderer)
+        self.discussion = DiscussionAgent(memory_manager, self.game_id, self.role_id, llm, is_murderer=is_murderer)
+        self.accusation = AccusationAgent(memory_manager, self.game_id, self.role_id, llm, is_murderer=is_murderer)
 
         self.phase = PlayerPhaseEnum.IDLE
         self.chapter = 0

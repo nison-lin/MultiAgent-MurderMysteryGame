@@ -21,6 +21,10 @@ PyMySQL==1.1.2
 # ---------- 数据模型 ----------
 pydantic==2.12.4
 
+# ---------- Agent 技能（解析 skills/*/SKILL.md 的 frontmatter） ----------
+# langchain-core 已依赖 PyYAML，这里显式声明；尚未锁定具体版本
+PyYAML>=6.0
+
 # ---------- LLM（OpenAI 协议兼容，默认指向 DeepSeek） ----------
 langchain-core==1.6.12
 langchain-openai==1.7.2

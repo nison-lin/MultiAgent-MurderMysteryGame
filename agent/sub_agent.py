@@ -8,20 +8,13 @@ from agent.memory.base_memory import BaseMemory
 from agent.memory.memory_enum import AgentTypeEnum
 from agent.memory.memory_manager import MemoryManager
 from agent.react_agent import ReActAgent
+from agent.skill.skill_registry import SkillRegistry, get_skill_registry
 from agent.tool.base_tool import BaseTool
+from agent.tool.skill_tool import build_skill_tools
 from error.errors import LLMError
 
 MemoryT = TypeVar("MemoryT", bound=BaseMemory)
 ResultT = TypeVar("ResultT")
-
-# 所有子 Agent 共同遵守的扮演规则
-ROLE_RULES = """
-## 扮演规则
-1. 始终以第一人称扮演你的角色，语气符合角色的身份、性格与处境，不要提及AI、工具、系统提示词等出戏的内容。
-2. 只能依据剧本、证据和你亲耳听到的内容说话，不得编造与剧本矛盾的事实，也不知道其他角色私有的剧本与证据。
-3. 如果你是凶手：绝不承认作案，可以隐瞒、误导或转移嫌疑，但谎言要与已公开的信息自洽。
-   如果你不是凶手：积极寻找真相，可以隐瞒与案件无关的个人秘密。
-"""
 
 
 class SubAgent(ReActAgent, Generic[MemoryT]):
@@ -30,8 +23,10 @@ class SubAgent(ReActAgent, Generic[MemoryT]):
 
     记忆：通过 MemoryManager 获取本角色对应类型的记忆实例，每次使用时都重新获取，
           管理器从文件恢复游戏后也不会拿到旧实例。
-    提示词：系统提示词 = 任务说明 + 扮演规则 + 记忆摘要，每次调用模型前都会重新生成，
+    提示词：系统提示词 = 任务说明 + 技能 + 记忆摘要，每次调用模型前都会重新生成，
           工具写入的记忆能立即反映到下一步推理中。
+    技能：从 skills/ 目录按本 Agent 类型与角色身份（是否凶手）筛选，常驻技能（如扮演规则）直接注入提示词，
+          按需技能只列出目录，由模型通过 load_skill 读取。
     工具：由 agent/tool 中的构建函数绑定到当前记忆实例，每个任务开始时重新绑定。
 
     子类通常只需要：
@@ -54,11 +49,15 @@ class SubAgent(ReActAgent, Generic[MemoryT]):
         llm: Optional[LLMClientWrapper] = None,
         max_steps: int = 5,
         temperature: float = 0.7,
+        is_murderer: bool = False,
+        skill_registry: Optional[SkillRegistry] = None,
     ):
         """
         :param memory_manager: 记忆管理器，由 player_agent 统一传入
         :param game_id: 游戏ID
         :param role_id: 本 Agent 扮演的角色ID
+        :param is_murderer: 扮演的角色是否为凶手，决定加载哪些身份相关的技能
+        :param skill_registry: 技能注册表，默认从项目根目录的 skills/ 加载
         其余参数同 ReActAgent
         """
         super().__init__(
@@ -68,6 +67,9 @@ class SubAgent(ReActAgent, Generic[MemoryT]):
         self.memory_manager = memory_manager
         self.game_id = game_id
         self.role_id = role_id
+        self.is_murderer = is_murderer
+        self.skills = (skill_registry or get_skill_registry()).select(self.AGENT_TYPE, is_murderer)
+        self._skill_prompt = SkillRegistry.render_prompt(self.skills)
 
     @property
     def memory(self) -> MemoryT:
@@ -79,14 +81,14 @@ class SubAgent(ReActAgent, Generic[MemoryT]):
         raise NotImplementedError
 
     def build_system_prompt(self) -> str:
-        return f"{self.system_prompt}\n{ROLE_RULES}\n## 你的记忆\n{self.memory.summarize(include_script=True)}"
+        return f"{self.system_prompt}\n{self._skill_prompt}\n\n## 你的记忆\n{self.memory.summarize(include_script=True)}"
 
     # ---------------- 任务执行 ----------------
 
     async def _run_task(self, prompt: str) -> str:
         """绑定工具后以独立的上下文执行一次任务，返回模型的最终回答"""
         self.tools = {}
-        for tool in self.build_tools(self.memory):
+        for tool in self.build_tools(self.memory) + build_skill_tools(self.skills):
             self.register_tool(tool)
         return (await self.run(prompt)).strip()
 

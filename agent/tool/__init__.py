@@ -5,6 +5,7 @@ from .memory_tool import build_memory_tools
 from .private_chat_tool import build_private_chat_tools
 from .discussion_tool import build_discussion_tools
 from .accusation_tool import build_accusation_tools
+from .skill_tool import build_skill_tools
 
 __all__ = [
     "BaseTool",
@@ -13,4 +14,5 @@ __all__ = [
     "build_private_chat_tools",
     "build_discussion_tools",
     "build_accusation_tools",
+    "build_skill_tools",
 ]
